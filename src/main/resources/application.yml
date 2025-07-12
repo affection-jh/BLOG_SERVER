@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: blog
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/blog
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: jjh8113742$$
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  servlet:
+    multipart:
+      enabled : true
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+# 이미지 저장 경로 설정 (자동 비율 유지 리사이징)
+app:
+  image:
+    upload:
+      path: ./uploads/images
+    thumbnail:
+      path: ./uploads/thumbnails
+      max-dimension: 300    # 썸네일 최대 크기 (비율 유지)
+    max-dimension: 2048     # 원본 최대 크기 (비율 유지)
+    # 기존 고정 크기 설정은 제거 (자동 비율 계산으로 대체)

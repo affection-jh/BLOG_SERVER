@@ -1,0 +1,55 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Build
+/build/
+/target/
+/out/
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+*.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+*.env
+
+# Uploads & temp
+uploads/
+*.tmp
+*.swp
+
+# Test
+/test-output/
+
+# 기타
+*.bak
+*.old
+*.orig
+*.rej
+
+# Spring Boot
+spring.log
+
+# Local config
+src/main/resources/application-local.yml
+src/main/resources/application-local.properties
