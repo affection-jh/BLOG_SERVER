@@ -30,8 +30,8 @@ Thumbs.db
 logs/
 
 # Environment
-.env
-*.env
+# .env
+# *.env
 
 # Uploads & temp
 uploads/
@@ -53,3 +53,9 @@ spring.log
 # Local config
 src/main/resources/application-local.yml
 src/main/resources/application-local.properties
+
+# AWS credentials
+src/main/resources/application-prod.yml
+src/main/resources/application-prod.properties
+aws-credentials.yml
+aws-credentials.properties

@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 public class ImageUploadResponse {
     
     private Long imageId;
-    private String storageUrl;
-    private String thumbnailUrl;
+    private String accessUrl;
+    private String thumbnailAccessUrl;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime uploadTime;
@@ -17,11 +17,15 @@ public class ImageUploadResponse {
     
     public ImageUploadResponse() {}
     
-    public ImageUploadResponse(Long imageId, String storageUrl, String thumbnailUrl, 
-                              LocalDateTime uploadTime, Long fileSize, String mimeType) {
+    public ImageUploadResponse(Long imageId, 
+                              String accessUrl,
+                              String thumbnailAccessUrl,
+                              LocalDateTime uploadTime, 
+                              Long fileSize, 
+                              String mimeType) {
         this.imageId = imageId;
-        this.storageUrl = storageUrl;
-        this.thumbnailUrl = thumbnailUrl;
+        this.accessUrl = accessUrl;
+        this.thumbnailAccessUrl = thumbnailAccessUrl;
         this.uploadTime = uploadTime;
         this.fileSize = fileSize;
         this.mimeType = mimeType;
@@ -36,20 +40,20 @@ public class ImageUploadResponse {
         this.imageId = imageId;
     }
     
-    public String getStorageUrl() {
-        return storageUrl;
+    public String getAccessUrl() {
+        return accessUrl;
     }
     
-    public void setStorageUrl(String storageUrl) {
-        this.storageUrl = storageUrl;
+    public void setAccessUrl(String accessUrl) {
+        this.accessUrl = accessUrl;
     }
     
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
+    public String getThumbnailAccessUrl() {
+        return thumbnailAccessUrl;
     }
     
-    public void setThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
+    public void setThumbnailAccessUrl(String thumbnailAccessUrl) {
+        this.thumbnailAccessUrl = thumbnailAccessUrl;
     }
     
     public LocalDateTime getUploadTime() {

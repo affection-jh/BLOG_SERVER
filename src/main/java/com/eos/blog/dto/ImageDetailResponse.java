@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 public class ImageDetailResponse {
     
     private Long imageId;
-    private String storageUrl;
-    private String thumbnailUrl;
+    private String accessUrl;
+    private String thumbnailAccessUrl;
     private String uploaderUid;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -19,12 +19,12 @@ public class ImageDetailResponse {
     
     public ImageDetailResponse() {}
     
-    public ImageDetailResponse(Long imageId, String storageUrl, String thumbnailUrl, 
+    public ImageDetailResponse(Long imageId, String accessUrl, String thumbnailAccessUrl, 
                               String uploaderUid, LocalDateTime uploadTime, 
                               Long fileSize, String mimeType, Boolean isTemp) {
         this.imageId = imageId;
-        this.storageUrl = storageUrl;
-        this.thumbnailUrl = thumbnailUrl;
+        this.accessUrl = accessUrl;
+        this.thumbnailAccessUrl = thumbnailAccessUrl;
         this.uploaderUid = uploaderUid;
         this.uploadTime = uploadTime;
         this.fileSize = fileSize;
@@ -41,20 +41,20 @@ public class ImageDetailResponse {
         this.imageId = imageId;
     }
     
-    public String getStorageUrl() {
-        return storageUrl;
+    public String getAccessUrl() {
+        return accessUrl;
     }
     
-    public void setStorageUrl(String storageUrl) {
-        this.storageUrl = storageUrl;
+    public void setAccessUrl(String accessUrl) {
+        this.accessUrl = accessUrl;
     }
     
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
+    public String getThumbnailAccessUrl() {
+        return thumbnailAccessUrl;
     }
     
-    public void setThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
+    public void setThumbnailAccessUrl(String thumbnailAccessUrl) {
+        this.thumbnailAccessUrl = thumbnailAccessUrl;
     }
     
     public String getUploaderUid() {

@@ -39,6 +39,8 @@ dependencies {
 	implementation("org.slf4j:slf4j-api")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	implementation("software.amazon.awssdk:s3:2.25.61")
+	implementation("software.amazon.awssdk:url-connection-client:2.25.61")
 }
 
 tasks.withType<Test> {

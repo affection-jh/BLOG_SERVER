@@ -18,9 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +27,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class ImageController {
     private static final Logger log = LoggerFactory.getLogger(ImageController.class);
+    private static final int PRESIGNED_URL_EXPIRATION_MINUTES = 5;
 
     @Autowired
     private ImageService imageService;
@@ -48,19 +46,16 @@ public class ImageController {
         if (uid == null || uid.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("사용자 UID는 필수입니다.");
         }
+        
         uid = uid.trim();
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body("이미지 파일만 업로드 가능합니다.");
-        }
         try {
             ImageUploadResponse response = imageService.uploadImage(file, uid);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (IOException e) {
             log.error("이미지 업로드 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("이미지 업로드 중 오류가 발생했습니다.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -77,29 +72,15 @@ public class ImageController {
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             log.error("이미지 삭제 실패: {}", e.getMessage());
-            if (e.getMessage().contains("권한이 없거나")) {
+            if (e.getMessage().contains("찾을 수 없습니다")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("이미지를 찾을 수 없습니다.");
+            } else if (e.getMessage().contains("삭제 권한이 없거나")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("삭제 권한이 없습니다.");
-            } else if (e.getMessage().contains("찾을 수 없습니다")) {
-                return ResponseEntity.notFound().build();
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("이미지 삭제 중 오류가 발생했습니다.");
         }
     }
 
-    /**
-     * 이미지 상세 조회
-     * imageId 유효성, 존재 여부 체크
-     */
-    @GetMapping("/{imageId}")
-    public ResponseEntity<?> getImageDetail(@PathVariable Long imageId) {
-        try {
-            ImageDetailResponse response = imageService.getImageDetail(imageId);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            log.error("이미지 조회 실패: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     /**
      * 이미지 사용 확정
@@ -161,52 +142,128 @@ public class ImageController {
         }
     }
 
+
     /**
-     * 이미지 파일 직접 제공 (캐싱 헤더 포함)
+     * 이미지 접근 URL 생성 (5분 만료 presigned URL)
      */
-    @GetMapping("/{imageId}/file")
-    public ResponseEntity<?> getImageFile(@PathVariable Long imageId) {
+    @GetMapping("/{imageId}/url")
+    public ResponseEntity<?> getImageAccessUrl(@PathVariable Long imageId) {
         try {
-            ImageDetailResponse imageDetail = imageService.getImageDetail(imageId);
-            Path imagePath = Paths.get(imageDetail.getStorageUrl());
-            if (!Files.exists(imagePath)) {
-                return ResponseEntity.notFound().build();
-            }
-            byte[] imageBytes = Files.readAllBytes(imagePath);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType(imageDetail.getMimeType()));
-            headers.setCacheControl("public, max-age=31536000");
-            headers.setETag("\"" + imageDetail.getImageId() + "\"");
-            return ResponseEntity.ok().headers(headers).body(imageBytes);
+            String accessUrl = imageService.generateImageAccessUrl(imageId);
+            Map<String, String> response = new HashMap<>();
+            response.put("accessUrl", accessUrl);
+            response.put("expirationMinutes", String.valueOf(PRESIGNED_URL_EXPIRATION_MINUTES));
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("이미지 파일 제공 실패: {}", e.getMessage());
+            log.error("이미지 접근 URL 생성 실패: {}", e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }
 
     /**
-     * 썸네일 파일 직접 제공
+     * 썸네일 접근 URL 생성 (5분 만료 presigned URL)
      */
-    @GetMapping("/{imageId}/thumbnail")
-    public ResponseEntity<?> getThumbnailFile(@PathVariable Long imageId) {
+    @GetMapping("/{imageId}/thumbnail/url")
+    public ResponseEntity<?> getThumbnailAccessUrl(@PathVariable Long imageId) {
         try {
-            ImageDetailResponse imageDetail = imageService.getImageDetail(imageId);
-            if (imageDetail.getThumbnailUrl() == null) {
-                return ResponseEntity.notFound().build();
-            }
-            Path thumbnailPath = Paths.get(imageDetail.getThumbnailUrl());
-            if (!Files.exists(thumbnailPath)) {
-                return ResponseEntity.notFound().build();
-            }
-            byte[] thumbnailBytes = Files.readAllBytes(thumbnailPath);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.parseMediaType(imageDetail.getMimeType()));
-            headers.setCacheControl("public, max-age=31536000");
-            headers.setETag("\"" + imageDetail.getImageId() + "_thumb\"");
-            return ResponseEntity.ok().headers(headers).body(thumbnailBytes);
+            String accessUrl = imageService.generateThumbnailAccessUrl(imageId);
+            Map<String, String> response = new HashMap<>();
+            response.put("accessUrl", accessUrl);
+            response.put("expirationMinutes", String.valueOf(PRESIGNED_URL_EXPIRATION_MINUTES));
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("썸네일 파일 제공 실패: {}", e.getMessage());
+            log.error("썸네일 접근 URL 생성 실패: {}", e.getMessage());
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 여러 이미지 접근 URL 배치 생성 (5분 만료 presigned URL)
+     */
+    @GetMapping("/batch/url")
+    public ResponseEntity<?> getBatchImageAccessUrls(@RequestParam List<Long> ids) {
+        try {
+            if (ids == null || ids.isEmpty()) {
+                return ResponseEntity.badRequest().body("이미지 ID 목록은 필수입니다.");
+            }
+            if (ids.size() > 20) {
+                return ResponseEntity.badRequest().body("최대 20개까지 조회 가능합니다.");
+            }
+            
+            List<Map<String, String>> results = imageService.generateBatchImageAccessUrls(ids);
+            Map<String, Object> response = new HashMap<>();
+            response.put("images", results);
+            response.put("expirationMinutes", PRESIGNED_URL_EXPIRATION_MINUTES);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("배치 이미지 접근 URL 생성 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("배치 처리 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 다중 이미지 업로드
+     */
+    @PostMapping("/upload-multiple")
+    public ResponseEntity<?> uploadMultipleImages(@RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                                  @RequestParam("uid") String uid) {
+        if (files == null || files.isEmpty()) {
+            return ResponseEntity.badRequest().body("'files' 파라미터로 이미지 파일들을 전송해주세요. (FormData 사용)");
+        }
+        if (uid == null || uid.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("사용자 UID는 필수입니다.");
+        }
+        
+        uid = uid.trim();
+        
+        try {
+            List<ImageUploadResponse> responses = imageService.uploadMultipleImages(files, uid);
+            return ResponseEntity.ok(responses);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            log.error("다중 이미지 업로드 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("이미지 업로드 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 이미지 상세 정보 조회 (접근 URL 포함)
+     */
+    @GetMapping("/{imageId}/detail")
+    public ResponseEntity<?> getImageDetailWithAccessUrl(@PathVariable Long imageId) {
+        try {
+            ImageDetailResponse imageDetail = imageService.getImageDetailWithAccessUrl(imageId);
+            return ResponseEntity.ok(imageDetail);
+        } catch (Exception e) {
+            log.error("이미지 상세 정보 조회 실패: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 사용자별 폴더의 모든 이미지 삭제
+     */
+    @DeleteMapping("/user/{uid}/all")
+    public ResponseEntity<?> deleteAllUserImages(@PathVariable String uid,
+                                                 @RequestHeader("Authorization") String authorization) {
+        String requesterUid = authorization == null ? null : authorization.trim();
+        
+        if (!uid.equals(requesterUid)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("자신의 이미지만 삭제할 수 있습니다.");
+        }
+        
+        try {
+            imageService.deleteAllUserImages(uid);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "사용자의 모든 이미지가 삭제되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("사용자 이미지 전체 삭제 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("이미지 삭제 중 오류가 발생했습니다.");
         }
     }
 
