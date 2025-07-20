@@ -6,7 +6,7 @@ spring:
     url: jdbc:mysql://localhost:3306/blog
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 
+    password: jjh8113742$$
 
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
@@ -25,6 +25,14 @@ spring:
 
 server:
   port: 8080
+  error:
+    whitelabel:
+      enabled: false
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
 
 # AWS S3 설정
 cloud:
@@ -32,8 +40,8 @@ cloud:
     s3:
       bucket: eos-blog-bucket
     credentials:
-      access-key:
-      secret-key:
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
       static: ap-northeast-2
 

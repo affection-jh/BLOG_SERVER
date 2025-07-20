@@ -1,9 +1,10 @@
 package com.eos.blog.repository;
 
-import com.eos.blog.model.Image;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.*;
 import org.springframework.stereotype.Repository;
+
+import com.eos.blog.entity.Image;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,4 +43,6 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     @Modifying
     @Query("UPDATE Image i SET i.isDeleted = true WHERE i.isTemp = true AND i.uploadTime < :expiryTime")
     void deleteExpiredTempImages(@Param("expiryTime") LocalDateTime expiryTime);
+    
+
 } 

@@ -1,4 +1,5 @@
 package com.eos.blog.service;
+import com.eos.blog.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -87,7 +88,7 @@ public class S3StorageService {
             }
             
         } catch (Exception e) {
-            throw new RuntimeException("사용자 폴더 삭제 실패: " + e.getMessage(), e);
+            throw new BusinessException("사용자 폴더 삭제 실패: " + e.getMessage(), e);
         }
     }
 
@@ -129,7 +130,7 @@ public class S3StorageService {
             PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
             return presignedRequest.url().toString();
         } catch (Exception e) {
-            throw new RuntimeException("Presigned URL 생성 실패: " + e.getMessage(), e);
+            throw new BusinessException("Presigned URL 생성 실패: " + e.getMessage(), e);
         }
     }
 

@@ -42,13 +42,28 @@ public class ImageProcessor {
         byte[] imageBytes = baos.toByteArray();
         String s3Url = s3StorageService.upload(imageBytes, originalKey, file.getContentType());
 
-        // 썸네일 생성 및 S3 업로드
+        // 썸네일 생성 및 S3 업로드 (더 나은 품질로 조정)
         BufferedImage thumbnail = Thumbnails.of(originalImage)
-                .size(300, 300)
+                .size(400, 400)  // 크기를 400x400으로 증가
+                .keepAspectRatio(true)  // 비율 유지
+                .outputQuality(0.9)  // 품질을 90%로 설정 (더 높은 품질)
                 .asBufferedImage();
         ByteArrayOutputStream thumbBaos = new ByteArrayOutputStream();
         ImageIO.write(thumbnail, extension, thumbBaos);
         byte[] thumbBytes = thumbBaos.toByteArray();
+        
+        // 썸네일이 너무 크면 품질을 낮춰서 재생성
+        if (thumbBytes.length > 100 * 1024) { // 100KB 이상이면
+            thumbnail = Thumbnails.of(originalImage)
+                    .size(400, 400)
+                    .keepAspectRatio(true)
+                    .outputQuality(0.75)  // 품질을 75%로 낮춤
+                    .asBufferedImage();
+            thumbBaos = new ByteArrayOutputStream();
+            ImageIO.write(thumbnail, extension, thumbBaos);
+            thumbBytes = thumbBaos.toByteArray();
+        }
+        
         String thumbS3Url = s3StorageService.upload(thumbBytes, thumbnailKey, file.getContentType());
 
         return new ProcessedImageInfo(s3Url, thumbS3Url, imageBytes.length, file.getContentType());
