@@ -49,4 +49,8 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     // content에서 특정 이미지 ID를 포함하는 블로그 존재 여부 확인
     @Query(value = "SELECT COUNT(*) > 0 FROM blogs b WHERE b.is_deleted = false AND b.content LIKE CONCAT('%', :imageId, '%')", nativeQuery = true)
     boolean existsByContentContainingImageId(@Param("imageId") Long imageId);
+    
+    // 특정 사용자의 발행된 블로그들을 최신순으로 조회
+    @Query("SELECT b FROM Blog b WHERE b.authorId = :authorId AND b.status = :status AND b.isDeleted = false ORDER BY b.updatedAt DESC")
+    List<Blog> findByAuthorIdAndStatusOrderByUpdatedAtDesc(@Param("authorId") String authorId, @Param("status") Blog.BlogStatus status, Pageable pageable);
 } 

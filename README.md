@@ -42,19 +42,42 @@ DELETE /api/images/{imageId}
 
 ## 환경 설정
 
-### S3 설정 방법
+### 1. application.yml 설정
 
-`application.yml` 파일에서 AWS 자격 증명 및 버킷 정보를 설정합니다:
+1. `src/main/resources/application.yml.template` 파일을 `application.yml`로 복사합니다:
+```bash
+cp src/main/resources/application.yml.template src/main/resources/application.yml
+```
+
+2. `application.yml` 파일에서 다음 설정을 수정합니다:
+   - 데이터베이스 연결 정보 (username, password)
+   - AWS S3 버킷 이름
+   - 기타 필요한 설정
+
+### 2. 환경 변수 설정
+
+AWS 자격 증명을 환경 변수로 설정합니다:
+
+```bash
+# Windows
+set AWS_ACCESS_KEY_ID=your-access-key
+set AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# Linux/Mac
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
+```
+
+### 3. AWS S3 설정 예시
 
 ```yaml
 cloud:
   aws:
     s3:
-      enabled: true
       bucket: your-bucket-name
     credentials:
-      access-key: your-access-key
-      secret-key: your-secret-key
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
     region:
       static: ap-northeast-2
 ```

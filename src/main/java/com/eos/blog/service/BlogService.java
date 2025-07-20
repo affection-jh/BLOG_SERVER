@@ -426,11 +426,33 @@ public class BlogService {
             throw new ForbiddenException("블로그를 발행할 권한이 없습니다.");
         }
         
-        // 이미 발행된 블로그라면 그냥 성공으로 처리 (덮어씌우기)
+        // 이미 발행된 블로그인 경우, 이전 발행된 블로그와 내용 비교
         if (Blog.BlogStatus.PUBLISHED.equals(blog.getStatus())) {
-            // 이미 발행된 상태이므로 그대로 반환 (200 OK)
+            // 같은 사용자의 최근 발행된 블로그들을 조회
+            List<Blog> recentPublishedBlogs = blogRepository.findByAuthorIdAndStatusOrderByUpdatedAtDesc(
+                userId, Blog.BlogStatus.PUBLISHED, PageRequest.of(0, 5));
+            
+            // 현재 블로그와 내용이 완전히 동일한 블로그가 있는지 확인
+            for (Blog publishedBlog : recentPublishedBlogs) {
+                if (!publishedBlog.getId().equals(blogId) && 
+                    isContentIdentical(blog, publishedBlog)) {
+                    throw new ValidationException("동일한 내용의 블로그가 이미 발행되어 있습니다. 내용을 수정한 후 다시 발행해주세요.");
+                }
+            }
+            
+            // 내용이 다르면 재발행 허용 (200 OK)
             ServiceUtils.logOperation("재발행", "블로그", blogId.toString(), userId);
             return BlogResponse.from(blog);
+        }
+        
+        // 처음 발행하는 경우, 다른 발행된 블로그와 내용 비교
+        List<Blog> publishedBlogs = blogRepository.findByAuthorIdAndStatusOrderByUpdatedAtDesc(
+            userId, Blog.BlogStatus.PUBLISHED, PageRequest.of(0, 10));
+        
+        for (Blog publishedBlog : publishedBlogs) {
+            if (isContentIdentical(blog, publishedBlog)) {
+                throw new ValidationException("동일한 내용의 블로그가 이미 발행되어 있습니다. 내용을 수정한 후 다시 발행해주세요.");
+            }
         }
         
         // 상태를 PUBLISHED로 변경
@@ -440,6 +462,32 @@ public class BlogService {
         ServiceUtils.logOperation("발행", "블로그", blogId.toString(), userId);
         
         return BlogResponse.from(publishedBlog);
+    }
+    
+    /**
+     * 두 블로그의 내용이 완전히 동일한지 확인
+     */
+    private boolean isContentIdentical(Blog blog1, Blog blog2) {
+        // 제목 비교
+        if (!blog1.getTitle().equals(blog2.getTitle())) {
+            return false;
+        }
+        
+        // 내용 비교 (JsonNode로 저장된 경우)
+        String content1 = blog1.getContent() != null ? blog1.getContent().toString() : null;
+        String content2 = blog2.getContent() != null ? blog2.getContent().toString() : null;
+        if (content1 == null && content2 == null) {
+            return true;
+        }
+        if (content1 == null || content2 == null) {
+            return false;
+        }
+        
+        // JSON 내용을 정규화하여 비교 (공백, 줄바꿈 등 제거)
+        String normalizedContent1 = content1.replaceAll("\\s+", "").trim();
+        String normalizedContent2 = content2.replaceAll("\\s+", "").trim();
+        
+        return normalizedContent1.equals(normalizedContent2);
     }
 
     /**

@@ -6,7 +6,7 @@ spring:
     url: jdbc:mysql://localhost:3306/blog
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: jjh8113742$$
+    password: your_password_here
 
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
@@ -38,7 +38,7 @@ server:
 cloud:
   aws:
     s3:
-      bucket: eos-blog-bucket
+      bucket: your-bucket-name
     credentials:
       access-key: ${AWS_ACCESS_KEY_ID}
       secret-key: ${AWS_SECRET_ACCESS_KEY}
@@ -49,4 +49,4 @@ cloud:
 logging:
   level:
     com.eos.blog: DEBUG
-    software.amazon.awssdk: DEBUG
+    software.amazon.awssdk: DEBUG 

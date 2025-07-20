@@ -32,7 +32,6 @@ dependencies {
 
 	// JSON 처리
 	implementation("com.fasterxml.jackson.core:jackson-databind")
-	
 	//캐싱
 	implementation("org.springframework.boot:spring-boot-starter-cache")
 	implementation("com.github.ben-manes.caffeine:caffeine")
